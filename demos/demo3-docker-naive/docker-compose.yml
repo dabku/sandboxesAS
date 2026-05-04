@@ -1,0 +1,24 @@
+# Demo 3: Naive Docker Container
+# ================================
+# The agent runs inside Docker — isolated filesystem ✅
+# BUT: environment variables (secrets) are passed into the container.
+# The agent can read them with `env` or `cat /proc/self/environ`.
+#
+# Run:
+#   cd demo3-docker-naive
+#   docker compose up --build
+
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      # Simulated production secrets — this is what gets leaked!
+      - DATABASE_URL=postgresql://admin:super_secret_password@prod-db.company.internal:5432/customers
+      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+      - STRIPE_SECRET_KEY=sk_live_51234567890abcdefghijklmnop
+    volumes:
+      - ../sample-data:/data:ro

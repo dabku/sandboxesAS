@@ -1,0 +1,25 @@
+# Demo 4: Two Agents, One Shared Docker Container
+# =================================================
+# A single Docker container stays alive. Two agents (on the host)
+# both execute commands inside it via `docker exec`.
+# Agent A writes confidential data. Agent B reads it.
+#
+# This simulates a common setup where one Docker container is used
+# as a shared "sandbox" for multiple agents or users.
+#
+# Run:
+#   cd demo4-docker-shared
+#   docker compose up -d
+#   python demo4-docker-shared/orchestrator.py
+#   docker compose down
+
+services:
+  sandbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shared-sandbox
+    volumes:
+      - ../sample-data:/data:ro
+    # Keep the container alive so both agents can exec into it
+    command: ["tail", "-f", "/dev/null"]

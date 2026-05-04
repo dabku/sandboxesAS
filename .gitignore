@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+_temp_agent_code.ts
+*.log
+.idea/
+.python_version
