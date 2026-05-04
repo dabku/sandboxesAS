@@ -2,7 +2,7 @@
 
 Code demos and presentation for **"Why Your AI Agent Needs a Sandbox"**.
 
-📺 **[View Presentation](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/presentation/sandboxes.html)**
+📺 **[View Presentation](https://dabku.github.io/sandboxesAS/presentation/sandboxes.html)**
 
 ---
 
@@ -83,4 +83,4 @@ python demos/demo7-daytona-sandbox/agent.py
 ## Presentation
 
 The [presentation](presentation/sandboxes.html) is a RevealJS slideshow built with [Quarto](https://quarto.org).  
-View it live at: **https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/presentation/sandboxes.html**
+View it live at: **https://dabku.github.io/sandboxesAS/presentation/sandboxes.html**
