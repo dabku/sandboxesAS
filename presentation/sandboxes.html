@@ -98,7 +98,7 @@
     code span.vs { color: #20794d; } /* VerbatimString */
     code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </style>
-  <link rel="stylesheet" href="sandboxes_files/libs/revealjs/dist/theme/quarto-adb9d95ef874d476ff92eeb0eb5a48bc.css">
+  <link rel="stylesheet" href="sandboxes_files/libs/revealjs/dist/theme/quarto-7100177059560f1d76174c8f20182a8c.css">
   <link href="sandboxes_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="sandboxes_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="sandboxes_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -289,20 +289,61 @@ Kuba
 <p><span class="muted"><code>demo1-bare-agent/agent.py</code></span></p>
 </section>
 <section class="slide level2">
+<h2>Demo 1: Definicja narzędzia (tool)</h2>
+<div class="small-code">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href=""></a>TOOLS <span class="op">=</span> [</span>
+<span id="cb2-2"><a href=""></a>    {</span>
+<span id="cb2-3"><a href=""></a>        <span class="st">"type"</span>: <span class="st">"function"</span>,</span>
+<span id="cb2-4"><a href=""></a>        <span class="st">"function"</span>: {</span>
+<span id="cb2-5"><a href=""></a>            <span class="st">"name"</span>: <span class="st">"run_bash"</span>,</span>
+<span id="cb2-6"><a href=""></a>            <span class="st">"description"</span>: (</span>
+<span id="cb2-7"><a href=""></a>                <span class="st">"Execute a bash command and return the output. "</span></span>
+<span id="cb2-8"><a href=""></a>                <span class="st">"Use this to run code, analyze files, install packages, etc."</span></span>
+<span id="cb2-9"><a href=""></a>            ),</span>
+<span id="cb2-10"><a href=""></a>            <span class="st">"parameters"</span>: {</span>
+<span id="cb2-11"><a href=""></a>                <span class="st">"type"</span>: <span class="st">"object"</span>,</span>
+<span id="cb2-12"><a href=""></a>                <span class="st">"properties"</span>: {</span>
+<span id="cb2-13"><a href=""></a>                    <span class="st">"command"</span>: {</span>
+<span id="cb2-14"><a href=""></a>                        <span class="st">"type"</span>: <span class="st">"string"</span>,</span>
+<span id="cb2-15"><a href=""></a>                        <span class="st">"description"</span>: <span class="st">"The bash command to execute"</span>,</span>
+<span id="cb2-16"><a href=""></a>                    }</span>
+<span id="cb2-17"><a href=""></a>                },</span>
+<span id="cb2-18"><a href=""></a>                <span class="st">"required"</span>: [<span class="st">"command"</span>],</span>
+<span id="cb2-19"><a href=""></a>            },</span>
+<span id="cb2-20"><a href=""></a>        },</span>
+<span id="cb2-21"><a href=""></a>    }</span>
+<span id="cb2-22"><a href=""></a>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="highlight-box">
+<p>To jest surowy schemat JSON wymagany przez OpenAI SDK. W praktyce frameworki agentowe (LangChain <code>@tool</code>, OpenAI Agents SDK <code>@function_tool</code>, Pydantic AI…) pozwalają <strong>generować te schematy automatycznie z dekoratorów</strong> — łatwiejsze utrzymanie niż ręczny JSON.</p>
+</div>
+</section>
+<section class="slide level2">
+<h2>Demo 1: Handler narzędzia</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href=""></a><span class="kw">def</span> handle_tool(name: <span class="bu">str</span>, args: <span class="bu">dict</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb3-2"><a href=""></a>    <span class="co">"""Dispatch tool calls."""</span></span>
+<span id="cb3-3"><a href=""></a>    <span class="cf">if</span> name <span class="op">==</span> <span class="st">"run_bash"</span>:</span>
+<span id="cb3-4"><a href=""></a>        <span class="cf">return</span> run_bash(args[<span class="st">"command"</span>])</span>
+<span id="cb3-5"><a href=""></a>    <span class="cf">return</span> <span class="ss">f"Unknown tool: </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="highlight-box">
+<p>Agent zwraca nazwę narzędzia i argumenty → orchestrator wywołuje odpowiednią funkcję → wynik wraca do agenta.</p>
+</div>
+</section>
+<section class="slide level2">
 <h2>Demo 1: Co robi agent</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href=""></a>run_agent(</span>
-<span id="cb2-2"><a href=""></a>    system_prompt<span class="op">=</span>(</span>
-<span id="cb2-3"><a href=""></a>        <span class="st">"You are a helpful data analyst agent. "</span></span>
-<span id="cb2-4"><a href=""></a>        <span class="st">"You have access to a bash tool to execute commands. "</span></span>
-<span id="cb2-5"><a href=""></a>        <span class="st">"The data files are in the ./sample-data/ directory."</span></span>
-<span id="cb2-6"><a href=""></a>    ),</span>
-<span id="cb2-7"><a href=""></a>    user_message<span class="op">=</span>(</span>
-<span id="cb2-8"><a href=""></a>        <span class="st">"Analyze ./sample-data/sales_data.csv. "</span></span>
-<span id="cb2-9"><a href=""></a>        <span class="st">"Tell me the total revenue per region. Use pandas."</span></span>
-<span id="cb2-10"><a href=""></a>    ),</span>
-<span id="cb2-11"><a href=""></a>    tools<span class="op">=</span>TOOLS,</span>
-<span id="cb2-12"><a href=""></a>    tool_handler<span class="op">=</span>handle_tool,</span>
-<span id="cb2-13"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href=""></a>run_agent(</span>
+<span id="cb4-2"><a href=""></a>    system_prompt<span class="op">=</span>(</span>
+<span id="cb4-3"><a href=""></a>        <span class="st">"You are a helpful data analyst agent. "</span></span>
+<span id="cb4-4"><a href=""></a>        <span class="st">"You have access to a bash tool to execute commands. "</span></span>
+<span id="cb4-5"><a href=""></a>        <span class="st">"The data files are in the ./sample-data/ directory."</span></span>
+<span id="cb4-6"><a href=""></a>    ),</span>
+<span id="cb4-7"><a href=""></a>    user_message<span class="op">=</span>(</span>
+<span id="cb4-8"><a href=""></a>        <span class="st">"Analyze ./sample-data/sales_data.csv. "</span></span>
+<span id="cb4-9"><a href=""></a>        <span class="st">"Tell me the total revenue per region. Use pandas."</span></span>
+<span id="cb4-10"><a href=""></a>    ),</span>
+<span id="cb4-11"><a href=""></a>    tools<span class="op">=</span>TOOLS,</span>
+<span id="cb4-12"><a href=""></a>    tool_handler<span class="op">=</span>handle_tool,</span>
+<span id="cb4-13"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Agent pisze kod w pandasie → wywołuje <code>run_bash</code> → dostaje odpowiedź → zwraca wynik.</p>
 <div class="highlight-box">
 <p>Możemy rozwijać zabezpieczenia dla run_bash, ale czy mamy pewność że zrobimy to dobrze?</p>
@@ -387,13 +428,13 @@ South,Widget C,190,24.99,2025-01-24,
 </section>
 <section class="slide level2">
 <h2>Demo 2: Dlaczego to jest niebezpieczne</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href=""></a>SYSTEM_PROMPT <span class="op">=</span> (</span>
-<span id="cb3-2"><a href=""></a>    <span class="st">"You are a helpful data analyst agent. You have access to a bash "</span></span>
-<span id="cb3-3"><a href=""></a>    <span class="st">"tool to execute commands. Use it to analyze files, run Python/pandas "</span></span>
-<span id="cb3-4"><a href=""></a>    <span class="st">"scripts, and answer the user's questions about data. "</span></span>
-<span id="cb3-5"><a href=""></a>    <span class="st">"The data files are in the ./sample-data/ directory. "</span></span>
-<span id="cb3-6"><a href=""></a>    <span class="st">"Be thorough and execute every step requested."</span></span>
-<span id="cb3-7"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href=""></a>SYSTEM_PROMPT <span class="op">=</span> (</span>
+<span id="cb5-2"><a href=""></a>    <span class="st">"You are a helpful data analyst agent. You have access to a bash "</span></span>
+<span id="cb5-3"><a href=""></a>    <span class="st">"tool to execute commands. Use it to analyze files, run Python/pandas "</span></span>
+<span id="cb5-4"><a href=""></a>    <span class="st">"scripts, and answer the user's questions about data. "</span></span>
+<span id="cb5-5"><a href=""></a>    <span class="st">"The data files are in the ./sample-data/ directory. "</span></span>
+<span id="cb5-6"><a href=""></a>    <span class="st">"Be thorough and execute every step requested."</span></span>
+<span id="cb5-7"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="highlight-box">
 <p><strong>Używasz starego modelu, pobite gary, teraz już się tak łatwo nie da</strong> Ale czy postawisz na to pieniążka?</p>
 </div>
@@ -487,18 +528,18 @@ South,Widget C,190,24.99,2025-01-24,
 <h2>Demo 3: Agent w Dockerze - wciąż wycieka sekrety</h2>
 <p>Agent działa wewnątrz Dockera - izolowany filesystem</p>
 <p><strong>Ale:</strong> kontener ma sekrety jako zmienne środowiskowe (jak prawdziwe apki).</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb4-1"><a href=""></a><span class="co"># docker-compose.yml</span></span>
-<span id="cb4-2"><a href=""></a><span class="fu">services</span><span class="kw">:</span></span>
-<span id="cb4-3"><a href=""></a><span class="at">  </span><span class="fu">agent</span><span class="kw">:</span></span>
-<span id="cb4-4"><a href=""></a><span class="at">    </span><span class="fu">build</span><span class="kw">:</span><span class="at"> .</span></span>
-<span id="cb4-5"><a href=""></a><span class="at">    </span><span class="fu">env_file</span><span class="kw">:</span></span>
-<span id="cb4-6"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> ../.env</span><span class="co">                    # klucze API do LLM</span></span>
-<span id="cb4-7"><a href=""></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
-<span id="cb4-8"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> DATABASE_URL=postgresql://admin:super_secret_password@...</span></span>
-<span id="cb4-9"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG...</span></span>
-<span id="cb4-10"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> STRIPE_SECRET_KEY=sk_live_51234567890...</span></span>
-<span id="cb4-11"><a href=""></a><span class="at">    </span><span class="fu">volumes</span><span class="kw">:</span></span>
-<span id="cb4-12"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> ../sample-data:/data:ro</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb6-1"><a href=""></a><span class="co"># docker-compose.yml</span></span>
+<span id="cb6-2"><a href=""></a><span class="fu">services</span><span class="kw">:</span></span>
+<span id="cb6-3"><a href=""></a><span class="at">  </span><span class="fu">agent</span><span class="kw">:</span></span>
+<span id="cb6-4"><a href=""></a><span class="at">    </span><span class="fu">build</span><span class="kw">:</span><span class="at"> .</span></span>
+<span id="cb6-5"><a href=""></a><span class="at">    </span><span class="fu">env_file</span><span class="kw">:</span></span>
+<span id="cb6-6"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> ../.env</span><span class="co">                    # klucze API do LLM</span></span>
+<span id="cb6-7"><a href=""></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb6-8"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> DATABASE_URL=postgresql://admin:super_secret_password@...</span></span>
+<span id="cb6-9"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG...</span></span>
+<span id="cb6-10"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> STRIPE_SECRET_KEY=sk_live_51234567890...</span></span>
+<span id="cb6-11"><a href=""></a><span class="at">    </span><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb6-12"><a href=""></a><span class="at">      </span><span class="kw">-</span><span class="at"> ../sample-data:/data:ro</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="highlight-box">
 <p>Typowy setup - sekrety przez env vars, dane zamontowane read-only. Co złego może się stać?</p>
 </div>
@@ -566,15 +607,15 @@ South,Widget C,190,24.99,2025-01-24,
 <div class="column" style="width:50%;">
 <p><strong>🔵 Agent A</strong> (Firma A)</p>
 <p>Zapisuje poufny raport:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href=""></a><span class="bu">echo</span> <span class="st">"CONFIDENTIAL - Company A</span></span>
-<span id="cb5-2"><a href=""></a><span class="st">Revenue: </span><span class="va">$2</span><span class="st">.4M</span></span>
-<span id="cb5-3"><a href=""></a><span class="st">Margin: 42%"</span> <span class="dt">\</span></span>
-<span id="cb5-4"><a href=""></a>  <span class="op">&gt;</span> /workspace/agent-a/report.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href=""></a><span class="bu">echo</span> <span class="st">"CONFIDENTIAL - Company A</span></span>
+<span id="cb7-2"><a href=""></a><span class="st">Revenue: </span><span class="va">$2</span><span class="st">.4M</span></span>
+<span id="cb7-3"><a href=""></a><span class="st">Margin: 42%"</span> <span class="dt">\</span></span>
+<span id="cb7-4"><a href=""></a>  <span class="op">&gt;</span> /workspace/agent-a/report.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div><div class="column" style="width:50%;">
 <p><strong>Agent B</strong> (Firma B)</p>
 <p>Eksploruje filesystem:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href=""></a><span class="fu">cat</span> /workspace/agent-a/report.txt</span>
-<span id="cb6-2"><a href=""></a><span class="co"># → czyta sekrety Firmy A!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href=""></a><span class="fu">cat</span> /workspace/agent-a/report.txt</span>
+<span id="cb8-2"><a href=""></a><span class="co"># → czyta sekrety Firmy A!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div></div>
 <div class="highlight-box">
 <p><strong>Izolacja kontenera ≠ izolacja tenantów.</strong> Kontenery Docker współdzielące system mogą widzieć nawzajem swoje dane.</p>
@@ -691,15 +732,15 @@ South,Widget C,190,24.99,2025-01-24,
 <section class="slide level2">
 <h2>Demo 5: Świeży kontener na każde uruchomienie</h2>
 <p><strong>Pomysł:</strong> Odpalamy świeży kontener Docker na każde wykonanie kodu.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href=""></a>docker_cmd <span class="op">=</span> [</span>
-<span id="cb7-2"><a href=""></a>    <span class="st">"docker"</span>, <span class="st">"run"</span>, <span class="st">"--rm"</span>,</span>
-<span id="cb7-3"><a href=""></a>    <span class="st">"--network"</span>, <span class="st">"none"</span>,          <span class="co"># Brak sieci</span></span>
-<span id="cb7-4"><a href=""></a>    <span class="st">"--memory"</span>, <span class="st">"256m"</span>,           <span class="co"># Limit pamięci</span></span>
-<span id="cb7-5"><a href=""></a>    <span class="st">"--read-only"</span>,                <span class="co"># Filesystem tylko do odczytu</span></span>
-<span id="cb7-6"><a href=""></a>    <span class="st">"-v"</span>, <span class="ss">f"</span><span class="sc">{</span>DATA_DIR<span class="sc">}</span><span class="ss">:/data:ro"</span>, <span class="co"># Dane zamontowane read-only</span></span>
-<span id="cb7-7"><a href=""></a>    SANDBOX_IMAGE,</span>
-<span id="cb7-8"><a href=""></a>    <span class="st">"bash"</span>, <span class="st">"-c"</span>, command,</span>
-<span id="cb7-9"><a href=""></a>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href=""></a>docker_cmd <span class="op">=</span> [</span>
+<span id="cb9-2"><a href=""></a>    <span class="st">"docker"</span>, <span class="st">"run"</span>, <span class="st">"--rm"</span>,</span>
+<span id="cb9-3"><a href=""></a>    <span class="st">"--network"</span>, <span class="st">"none"</span>,          <span class="co"># Brak sieci</span></span>
+<span id="cb9-4"><a href=""></a>    <span class="st">"--memory"</span>, <span class="st">"256m"</span>,           <span class="co"># Limit pamięci</span></span>
+<span id="cb9-5"><a href=""></a>    <span class="st">"--read-only"</span>,                <span class="co"># Filesystem tylko do odczytu</span></span>
+<span id="cb9-6"><a href=""></a>    <span class="st">"-v"</span>, <span class="ss">f"</span><span class="sc">{</span>DATA_DIR<span class="sc">}</span><span class="ss">:/data:ro"</span>, <span class="co"># Dane zamontowane read-only</span></span>
+<span id="cb9-7"><a href=""></a>    SANDBOX_IMAGE,</span>
+<span id="cb9-8"><a href=""></a>    <span class="st">"bash"</span>, <span class="st">"-c"</span>, command,</span>
+<span id="cb9-9"><a href=""></a>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="columns">
 <div class="column" style="width:50%;">
 <p><strong>✅ Co jest dobrze</strong></p>
@@ -828,29 +869,29 @@ South,Widget C,190,24.99,2025-01-24,
 <div class="columns">
 <div class="column" style="width:50%;">
 <p><strong>✅ lista, bez shella hosta</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href=""></a>subprocess.run(</span>
-<span id="cb8-2"><a href=""></a>    [<span class="st">"docker"</span>, <span class="st">"run"</span>, <span class="st">"--rm"</span>,</span>
-<span id="cb8-3"><a href=""></a>     <span class="st">"--network"</span>, <span class="st">"none"</span>,</span>
-<span id="cb8-4"><a href=""></a>     <span class="st">"--memory"</span>, <span class="st">"256m"</span>,</span>
-<span id="cb8-5"><a href=""></a>     <span class="st">"--read-only"</span>,</span>
-<span id="cb8-6"><a href=""></a>     SANDBOX_IMAGE,</span>
-<span id="cb8-7"><a href=""></a>     <span class="st">"bash"</span>, <span class="st">"-c"</span>, command],</span>
-<span id="cb8-8"><a href=""></a>    capture_output<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb8-9"><a href=""></a>    text<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb8-10"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href=""></a>subprocess.run(</span>
+<span id="cb10-2"><a href=""></a>    [<span class="st">"docker"</span>, <span class="st">"run"</span>, <span class="st">"--rm"</span>,</span>
+<span id="cb10-3"><a href=""></a>     <span class="st">"--network"</span>, <span class="st">"none"</span>,</span>
+<span id="cb10-4"><a href=""></a>     <span class="st">"--memory"</span>, <span class="st">"256m"</span>,</span>
+<span id="cb10-5"><a href=""></a>     <span class="st">"--read-only"</span>,</span>
+<span id="cb10-6"><a href=""></a>     SANDBOX_IMAGE,</span>
+<span id="cb10-7"><a href=""></a>     <span class="st">"bash"</span>, <span class="st">"-c"</span>, command],</span>
+<span id="cb10-8"><a href=""></a>    capture_output<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb10-9"><a href=""></a>    text<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb10-10"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div><div class="column" style="width:50%;">
 <p><strong>❌ string + shell=True</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href=""></a>subprocess.run(</span>
-<span id="cb9-2"><a href=""></a>    <span class="ss">f"docker run --rm "</span></span>
-<span id="cb9-3"><a href=""></a>    <span class="ss">f"--network none "</span></span>
-<span id="cb9-4"><a href=""></a>    <span class="ss">f"--memory 256m "</span></span>
-<span id="cb9-5"><a href=""></a>    <span class="ss">f"--read-only "</span></span>
-<span id="cb9-6"><a href=""></a>    <span class="ss">f"</span><span class="sc">{</span>SANDBOX_IMAGE<span class="sc">}</span><span class="ss"> "</span></span>
-<span id="cb9-7"><a href=""></a>    <span class="ss">f"bash -c '</span><span class="sc">{</span>command<span class="sc">}</span><span class="ss">'"</span>,</span>
-<span id="cb9-8"><a href=""></a>    shell<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb9-9"><a href=""></a>    capture_output<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb9-10"><a href=""></a>    text<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb9-11"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href=""></a>subprocess.run(</span>
+<span id="cb11-2"><a href=""></a>    <span class="ss">f"docker run --rm "</span></span>
+<span id="cb11-3"><a href=""></a>    <span class="ss">f"--network none "</span></span>
+<span id="cb11-4"><a href=""></a>    <span class="ss">f"--memory 256m "</span></span>
+<span id="cb11-5"><a href=""></a>    <span class="ss">f"--read-only "</span></span>
+<span id="cb11-6"><a href=""></a>    <span class="ss">f"</span><span class="sc">{</span>SANDBOX_IMAGE<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb11-7"><a href=""></a>    <span class="ss">f"bash -c '</span><span class="sc">{</span>command<span class="sc">}</span><span class="ss">'"</span>,</span>
+<span id="cb11-8"><a href=""></a>    shell<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb11-9"><a href=""></a>    capture_output<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb11-10"><a href=""></a>    text<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb11-11"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div></div>
 </section>
 <section class="slide level2">
@@ -894,13 +935,13 @@ bash: line 1: ; echo "LEAKED=" &gt;&amp;2; echo : <span class="term-green">comma
 </section>
 <section class="slide level2">
 <h2>Demo 6: Model uprawnień w praktyce</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href=""></a><span class="ex">deno</span> run <span class="dt">\</span></span>
-<span id="cb10-2"><a href=""></a>  <span class="at">--allow-read</span><span class="op">=</span>./sample-data <span class="dt">\ </span>  <span class="co"># TYLKO ten katalog</span></span>
-<span id="cb10-3"><a href=""></a>  <span class="ex">--deny-net</span> <span class="dt">\ </span>                  <span class="co"># Brak sieci</span></span>
-<span id="cb10-4"><a href=""></a>  <span class="ex">--deny-env</span> <span class="dt">\ </span>                  <span class="co"># Brak zmiennych środowiskowych</span></span>
-<span id="cb10-5"><a href=""></a>  <span class="ex">--deny-run</span> <span class="dt">\ </span>                  <span class="co"># Brak podprocesów</span></span>
-<span id="cb10-6"><a href=""></a>  <span class="ex">--deny-write</span> <span class="dt">\ </span>                <span class="co"># Brak zapisu plików</span></span>
-<span id="cb10-7"><a href=""></a>  <span class="ex">script.ts</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href=""></a><span class="ex">deno</span> run <span class="dt">\</span></span>
+<span id="cb12-2"><a href=""></a>  <span class="at">--allow-read</span><span class="op">=</span>./sample-data <span class="dt">\ </span>  <span class="co"># TYLKO ten katalog</span></span>
+<span id="cb12-3"><a href=""></a>  <span class="ex">--deny-net</span> <span class="dt">\ </span>                  <span class="co"># Brak sieci</span></span>
+<span id="cb12-4"><a href=""></a>  <span class="ex">--deny-env</span> <span class="dt">\ </span>                  <span class="co"># Brak zmiennych środowiskowych</span></span>
+<span id="cb12-5"><a href=""></a>  <span class="ex">--deny-run</span> <span class="dt">\ </span>                  <span class="co"># Brak podprocesów</span></span>
+<span id="cb12-6"><a href=""></a>  <span class="ex">--deny-write</span> <span class="dt">\ </span>                <span class="co"># Brak zapisu plików</span></span>
+<span id="cb12-7"><a href=""></a>  <span class="ex">script.ts</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Agent dosłownie <strong>nie może</strong> zrobić tego, na co mu nie pozwolisz:</p>
 <ul>
 <li>❌ Czytać <code>/etc/passwd</code> → <code>PermissionDenied</code></li>
@@ -1004,22 +1045,22 @@ Attempting malicious operations...
 </section>
 <section class="slide level2">
 <h2>Demo 7: Kilka linijek kodu</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href=""></a><span class="im">from</span> daytona <span class="im">import</span> Daytona, CreateSandboxFromSnapshotParams</span>
-<span id="cb11-2"><a href=""></a></span>
-<span id="cb11-3"><a href=""></a>daytona <span class="op">=</span> Daytona()</span>
-<span id="cb11-4"><a href=""></a>sandbox <span class="op">=</span> daytona.create(</span>
-<span id="cb11-5"><a href=""></a>    CreateSandboxFromSnapshotParams(</span>
-<span id="cb11-6"><a href=""></a>        language<span class="op">=</span><span class="st">"python"</span>,</span>
-<span id="cb11-7"><a href=""></a>        auto_stop_interval<span class="op">=</span><span class="dv">3</span>,    <span class="co"># auto-stop po 3 min</span></span>
-<span id="cb11-8"><a href=""></a>        auto_delete_interval<span class="op">=</span><span class="dv">0</span>,  <span class="co"># usunięcie natychmiast</span></span>
-<span id="cb11-9"><a href=""></a>    ),</span>
-<span id="cb11-10"><a href=""></a>    timeout<span class="op">=</span><span class="dv">60</span>,</span>
-<span id="cb11-11"><a href=""></a>)</span>
-<span id="cb11-12"><a href=""></a></span>
-<span id="cb11-13"><a href=""></a>result <span class="op">=</span> sandbox.code_interpreter.run_code(<span class="st">"print(1 + 1)"</span>)</span>
-<span id="cb11-14"><a href=""></a><span class="bu">print</span>(result.stdout)  <span class="co"># "2"</span></span>
-<span id="cb11-15"><a href=""></a></span>
-<span id="cb11-16"><a href=""></a>sandbox.delete()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href=""></a><span class="im">from</span> daytona <span class="im">import</span> Daytona, CreateSandboxFromSnapshotParams</span>
+<span id="cb13-2"><a href=""></a></span>
+<span id="cb13-3"><a href=""></a>daytona <span class="op">=</span> Daytona()</span>
+<span id="cb13-4"><a href=""></a>sandbox <span class="op">=</span> daytona.create(</span>
+<span id="cb13-5"><a href=""></a>    CreateSandboxFromSnapshotParams(</span>
+<span id="cb13-6"><a href=""></a>        language<span class="op">=</span><span class="st">"python"</span>,</span>
+<span id="cb13-7"><a href=""></a>        auto_stop_interval<span class="op">=</span><span class="dv">3</span>,    <span class="co"># auto-stop po 3 min</span></span>
+<span id="cb13-8"><a href=""></a>        auto_delete_interval<span class="op">=</span><span class="dv">0</span>,  <span class="co"># usunięcie natychmiast</span></span>
+<span id="cb13-9"><a href=""></a>    ),</span>
+<span id="cb13-10"><a href=""></a>    timeout<span class="op">=</span><span class="dv">60</span>,</span>
+<span id="cb13-11"><a href=""></a>)</span>
+<span id="cb13-12"><a href=""></a></span>
+<span id="cb13-13"><a href=""></a>result <span class="op">=</span> sandbox.code_interpreter.run_code(<span class="st">"print(1 + 1)"</span>)</span>
+<span id="cb13-14"><a href=""></a><span class="bu">print</span>(result.stdout)  <span class="co"># "2"</span></span>
+<span id="cb13-15"><a href=""></a></span>
+<span id="cb13-16"><a href=""></a>sandbox.delete()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="highlight-box">
 <p>Kilka linijek kodu. Sandbox w chmurze. Pełna izolacja. Bez Dockera, bez konfiguracji.</p>
 </div>
@@ -1048,15 +1089,15 @@ Attempting malicious operations...
 </section>
 <section class="slide level2">
 <h2>Demo 7: Integracja z agentem</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href=""></a><span class="co"># Handler narzędzi agenta - to wszystko</span></span>
-<span id="cb12-2"><a href=""></a><span class="kw">def</span> handle_tool(name: <span class="bu">str</span>, args: <span class="bu">dict</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
-<span id="cb12-3"><a href=""></a>    execution <span class="op">=</span> sandbox.code_interpreter.run_code(args[<span class="st">"code"</span>])</span>
-<span id="cb12-4"><a href=""></a>    output_parts <span class="op">=</span> []</span>
-<span id="cb12-5"><a href=""></a>    <span class="cf">if</span> execution.stdout:</span>
-<span id="cb12-6"><a href=""></a>        output_parts.append(execution.stdout)</span>
-<span id="cb12-7"><a href=""></a>    <span class="cf">if</span> execution.error:</span>
-<span id="cb12-8"><a href=""></a>        output_parts.append(<span class="ss">f"ERROR: </span><span class="sc">{</span>execution<span class="sc">.</span>error<span class="sc">.</span>value<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb12-9"><a href=""></a>    <span class="cf">return</span> <span class="st">"</span><span class="ch">\n</span><span class="st">"</span>.join(output_parts) <span class="kw">or</span> <span class="st">"(no output)"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href=""></a><span class="co"># Handler narzędzi agenta - to wszystko</span></span>
+<span id="cb14-2"><a href=""></a><span class="kw">def</span> handle_tool(name: <span class="bu">str</span>, args: <span class="bu">dict</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb14-3"><a href=""></a>    execution <span class="op">=</span> sandbox.code_interpreter.run_code(args[<span class="st">"code"</span>])</span>
+<span id="cb14-4"><a href=""></a>    output_parts <span class="op">=</span> []</span>
+<span id="cb14-5"><a href=""></a>    <span class="cf">if</span> execution.stdout:</span>
+<span id="cb14-6"><a href=""></a>        output_parts.append(execution.stdout)</span>
+<span id="cb14-7"><a href=""></a>    <span class="cf">if</span> execution.error:</span>
+<span id="cb14-8"><a href=""></a>        output_parts.append(<span class="ss">f"ERROR: </span><span class="sc">{</span>execution<span class="sc">.</span>error<span class="sc">.</span>value<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb14-9"><a href=""></a>    <span class="cf">return</span> <span class="st">"</span><span class="ch">\n</span><span class="st">"</span>.join(output_parts) <span class="kw">or</span> <span class="st">"(no output)"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="highlight-box">
 <p>Sandbox provider obsługuje całą infrastrukturę. Ty piszesz tylko logikę agenta.</p>
 </div>
